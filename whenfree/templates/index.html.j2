@@ -1,0 +1,165 @@
+{% extends "base.html.j2" %}
+
+{% block content %}
+<div id="app">
+<v-app>
+  <v-row>
+    <v-col
+        cols="3"
+    >
+      <v-date-picker
+        v-model="dateRange"
+        @click:date="selectDateRange"
+        :first-day-of-week="firstDayOfWeek"
+        show-adjacent-months
+        range
+        no-title
+      ></v-date-picker>
+    </v-col>
+        <v-col
+        cols="9">
+      <v-sheet height="64">
+        <v-toolbar
+          flat
+        >
+          <v-btn
+            outlined
+            class="mr-4"
+            color="grey darken-2"
+            @click="setToday"
+          >
+            Today
+          </v-btn>
+          <v-btn
+            fab
+            text
+            small
+            color="grey darken-2"
+            @click="prev"
+          >
+            <v-icon small>
+              mdi-chevron-left
+            </v-icon>
+          </v-btn>
+          <v-btn
+            fab
+            text
+            small
+            color="grey darken-2"
+            @click="next"
+          >
+            <v-icon small>
+              mdi-chevron-right
+            </v-icon>
+          </v-btn>
+          <v-toolbar-title v-if="this.$refs.calendar">
+            [[ title ]]
+          </v-toolbar-title>
+          <v-spacer></v-spacer>
+        </v-toolbar>
+      </v-sheet>
+            <v-sheet height="800">
+                <v-overlay :value="loading" :absolute="true">
+                <v-progress-circular
+                    indeterminate
+                    size="64"
+                ></v-progress-circular>
+                </v-overlay>
+                <v-calendar
+                ref="calendar"
+                v-model="focus"
+                :events="events"
+                color="primary"
+                type="week"
+                event-overlap-mode="stack"
+                :weekdays="weekdays"
+                @change="onChange"
+                ></v-calendar>
+            </v-sheet>
+        </v-col>
+    </v-row>
+</v-app>
+</div>
+
+<!--https://vuetifyjs.com/en/components/calendars/#type-day-->
+{% endblock %}
+
+{% block bodyscripts %}
+{{ super() }}
+<script src="https://cdn.jsdelivr.net/npm/vue@2.x/dist/vue.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/vuetify@2.x/dist/vuetify.js"></script>
+<script>
+const EVENT_ENDPOINT = {{ url_for('events_view', _external=true)|tojson|safe }};
+const SETTINGS = {{ calendar_settings|tojson|safe }};
+const FOCUS_DATE = {{ focus_date|tojson|safe }};
+Vue.config.delimiters = ['[[', ']]']
+new Vue({
+    el: '#app',
+    delimiters: ['[[', ']]'],
+    vuetify: new Vuetify(),
+    data: () => ({
+      focus: FOCUS_DATE,
+      weekdays: SETTINGS.weekdays,
+      firstDayOfWeek: SETTINGS.firstDayOfWeek,
+      events: [],
+      title: '',
+      dateRange: [],
+      loading: true,
+    }),
+    methods: {
+      setToday () {
+        this.focus = ''
+      },
+      prev () {
+        this.$refs.calendar.prev(1)
+      },
+      next () {
+        this.$refs.calendar.next(1)
+      },
+      onChange (span) {
+          start_date = new Date(span.start.date)
+          end_date = new Date(span.end.date)
+          if(start_date.getFullYear() == end_date.getFullYear() && start_date.getMonth() == end_date.getMonth()) {
+              this.title = start_date.toLocaleString('en-GB', { day: 'numeric' }) + "-" + end_date.toLocaleString('en-GB', { year: 'numeric', month: 'long', day: 'numeric' })
+          } else if(start_date.getFullYear() == end_date.getFullYear()) {
+              this.title = start_date.toLocaleString('en-GB', { day: 'numeric', month: 'long' }) + " - " + end_date.toLocaleString('en-GB', { year: 'numeric', month: 'long', day: 'numeric' })
+          } else {
+              this.title = start_date.toLocaleString('en-GB', { year: 'numeric', day: 'numeric', month: 'long' }) + " - " + end_date.toLocaleString('en-GB', { year: 'numeric', month: 'long', day: 'numeric' })
+          }
+          this.dateRange = [span.start.date, span.end.date]
+        this.loading = true;
+
+        var url = new URL(EVENT_ENDPOINT)
+        url.search = new URLSearchParams({
+            start: span.start.date,
+            end: span.end.date,
+        }).toString();
+
+        fetch(url).then((response) => {
+            return response.json()
+        }).then((json) => {
+            this.events = json.events;
+            this.loading = false;
+        })
+      },
+      selectDateRange(date) {
+          the_date = new Date(date)
+          if(the_date.getDay() == 0) {
+              the_date.setDate(the_date.getDate() - 2)
+          } else if(the_date.getDay() == 6) {
+              the_date.setDate(the_date.getDate() - 1)
+          }
+          this.focus = the_date.toISOString().split('T')[0]
+      },
+    },
+    mounted () {
+      this.$refs.calendar.scrollToTime('07:00')
+    },
+})
+</script>
+{% endblock %}
+
+{% block headscripts %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.6.0/chart.min.js" integrity="sha512-GMGzUEevhWh8Tc/njS0bDpwgxdCJLQBWG3Z2Ct+JGOpVnEmjvNx6ts4v6A2XJf1HOrtOsfhv3hBKpK9kE5z8AQ==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+{{ super() }}
+{% endblock %}

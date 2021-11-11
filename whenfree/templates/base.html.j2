@@ -1,0 +1,95 @@
+{% set default_title = 'Free/busy calendar' %}
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="https://unpkg.com/tachyons@4.9.1/css/tachyons.min.css" />
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Archivo:400,700|Raleway:400,700">
+    <link rel="stylesheet" href="https://dkane.net/theme/css/style.css" />
+    <link rel="stylesheet" href="https://dkane.net/theme/css/pygment.css" />
+    
+    <link href="https://fonts.googleapis.com/css?family=Roboto:100,300,400,500,700,900" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/@mdi/font@6.x/css/materialdesignicons.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/vuetify@2.x/dist/vuetify.min.css" rel="stylesheet">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, minimal-ui">
+    {% block headscripts %}
+    {% endblock %}
+    <title>{{ (title or default_title)|striptags }}</title>
+  </head>
+  <body class="home w-100 sans-serif near-black base-font bg-wavy">
+    <header class="body header-font normal ph3 ph5-ns pt3 {% if frontpage %}pt5-ns pb5{% else %}pb4{% endif %} moon-gray">
+      <div class="fr f3-ns mt1 mr2 w-100 w-auto-ns tr pb3">
+          <time id="current_time">{{ now }}</time>
+      </div>
+      <h1 class="{% if frontpage %}f-subheadline-ns{% endif %} tracked-tight f1 lh-title mv0 logo normal">
+        <a href="{{ url_for('index') }}" class="link moon-gray underline-yellow underline">
+          {{ default_title }}
+        </a>
+      </h1>
+    </header>
+    <main class="ph0 bg-white cf">
+      {% block header %}
+      <header class="fl w-100 ph3 ph5-ns entry-content lh-copy f4">
+        {% if (heading or title) not in [None, default_title] and (heading or title) %}
+        <h2 class="f2-ns mt4 mb0 f3 lh-solid normal">
+          {{ (heading or title)|safe }}
+        </h2>
+        {% if subtitle %}
+        <h3 class="f3-ns f4 lh-solid mv0 normal gray">
+        {{ subtitle|safe }}
+        </h3>
+        {% endif %}
+        {% endif %}
+      </header>
+      {% endblock %}
+      <section id="content" class="{% block sectionstyles %}fl w-100 ph3 pv5 ph5-ns lh-copy f4{% endblock %}">
+        {% block content %}{% endblock %}
+      </section>
+    </main>
+
+    
+    <footer id="contentinfo" class="body ph3 ph5-ns db pv5 moon-gray bg-near-black cf">
+      <div class="fl w-100 w-70-ns">
+        <p class="ma0 pa0">© {{now.year}} <a href="https://dkane.net/" class="link yellow underline-hover">David Kane</a></p>
+        <div class="mv2 pa0">
+        </div>
+        <div class="mv2 pa0">
+            <a href="https://github.com/drkane/find-that-postcode" class="" title="View code on Github">
+                <span class="icon mw2 dib">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="w2" aria-label="Github" role="img" viewBox="0 0 512 512">
+                        <rect width="512" height="512" rx="15%"></rect>
+                        <clipPath id="a">
+                            <rect width="512" height="512" rx="15%"></rect>
+                        </clipPath>
+                        <path fill="#fff" d="M335 499c14 0 12 17 12 17H165s-2-17 12-17c13 0 16-6 16-12l-1-50c-71 16-86-28-86-28-12-30-28-37-28-37-24-16 1-16 1-16 26 2 40 26 40 26 22 39 59 28 74 22 2-17 9-28 16-35-57-6-116-28-116-126 0-28 10-51 26-69-3-6-11-32 3-67 0 0 21-7 70 26 42-12 86-12 128 0 49-33 70-26 70-26 14 35 6 61 3 67 16 18 26 41 26 69 0 98-60 120-117 126 10 8 18 24 18 48l-1 70c0 6 3 12 16 12z" clip-path="url(#a)"></path>
+                    </svg>
+                </span>
+            </a>
+        </div>
+      </div>
+      <div class="fl tr-ns w-100 w-30-ns"></div>
+      <div class="mv2 pa0"></div>
+    </footer>
+    {% block bodyscripts %}
+    <script>
+      var current_time_el = document.getElementById('current_time');
+      let options = {
+        weekday: 'long',
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+      };
+      var update_time = function() {
+        var now = new Date();
+        current_time_el.setAttribute('datetime', now.toISOString());
+        current_time_el.innerHTML = now.toLocaleString(undefined, options);
+      }
+      update_time();
+      setInterval(update_time, 1000);
+    </script>
+    {% endblock %}
+  </body>
+</html>
