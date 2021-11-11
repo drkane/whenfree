@@ -1,15 +1,11 @@
-import csv
 import datetime
-from collections import defaultdict
 
-import requests_cache
 from flask import Flask, render_template, request
-from flask_basicauth import BasicAuth
 from humanize.time import naturaldelta
 from flask_caching import Cache
 
 from whenfree import settings
-from whenfree.events import get_days_before_and_after, get_events
+from whenfree.events import get_events
 from whenfree.utils import relative_date
 
 
@@ -17,17 +13,8 @@ def create_app():
     app = Flask(__name__)
 
     app.config["SECRET_KEY"] = settings.SECRET_KEY
-    app.config["BASIC_AUTH_USERNAME"] = settings.BASIC_AUTH_USERNAME
-    app.config["BASIC_AUTH_PASSWORD"] = settings.BASIC_AUTH_PASSWORD
     app.config["CACHE_TYPE"] = "SimpleCache"
     app.config["CACHE_DEFAULT_TIMEOUT"] = 300
-
-    requests_session = requests_cache.CachedSession(
-        "requests_cache",
-        expire_after=datetime.timedelta(hours=1),
-    )
-
-    basic_auth = BasicAuth(app)
 
     cache = Cache(app)
 
@@ -42,7 +29,6 @@ def create_app():
 
     @app.route("/")
     @app.route("/<focus_date>")
-    @basic_auth.required
     def index(focus_date=""):
         return render_template(
             "index.html.j2",
@@ -53,7 +39,6 @@ def create_app():
         )
 
     @app.route("/events")
-    @basic_auth.required
     @cache.cached(query_string=True)
     def events_view():
         search_start = datetime.datetime.strptime(request.args.get("start"), "%Y-%m-%d")

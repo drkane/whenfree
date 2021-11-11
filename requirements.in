@@ -1,6 +1,5 @@
 flask
 python-dotenv
-Flask-BasicAuth
 black
 isort
 requests
@@ -8,7 +7,6 @@ icalendar
 caldav
 num2words
 humanize
-requests-cache
 lxml==4.6.4
 Flask-Caching
 gunicorn
