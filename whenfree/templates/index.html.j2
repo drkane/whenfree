@@ -1,6 +1,14 @@
 {% extends "base.html.j2" %}
 
 {% block content %}
+<div class="w-100 db mb5">
+  <a href="{{ url_for('index') }}" class="link pa2 f4 br2 pa2 bg-blue white mr2">Today</a>
+  <a href="{{ url_for('index', focus_date=focus_date|add_days(-7)) }}" class="link pa2 f4 br2 pa2 bg-blue white mr2">&lt; Previous week</a>
+  <a href="{{ url_for('index', focus_date=focus_date|add_days(7)) }}" class="link pa2 f4 br2 pa2 bg-blue white mr2">Next week &gt;</a>
+  <span class="header-font ml3 f3">
+    {{ focus_date|date_range(last_day_of_week) }}
+  </span>
+</div>
 <div id="app">
 <v-app>
   <v-row>
@@ -18,46 +26,6 @@
     </v-col>
         <v-col
         cols="9">
-      <v-sheet height="64">
-        <v-toolbar
-          flat
-        >
-          <v-btn
-            outlined
-            class="mr-4"
-            color="grey darken-2"
-            @click="setToday"
-          >
-            Today
-          </v-btn>
-          <v-btn
-            fab
-            text
-            small
-            color="grey darken-2"
-            @click="prev"
-          >
-            <v-icon small>
-              mdi-chevron-left
-            </v-icon>
-          </v-btn>
-          <v-btn
-            fab
-            text
-            small
-            color="grey darken-2"
-            @click="next"
-          >
-            <v-icon small>
-              mdi-chevron-right
-            </v-icon>
-          </v-btn>
-          <v-toolbar-title v-if="this.$refs.calendar">
-            [[ title ]]
-          </v-toolbar-title>
-          <v-spacer></v-spacer>
-        </v-toolbar>
-      </v-sheet>
             <v-sheet height="800">
                 <v-overlay :value="loading" :absolute="true">
                 <v-progress-circular
@@ -91,7 +59,8 @@
 <script>
 const EVENT_ENDPOINT = {{ url_for('events_view', _external=true)|tojson|safe }};
 const SETTINGS = {{ calendar_settings|tojson|safe }};
-const FOCUS_DATE = {{ focus_date|tojson|safe }};
+const FOCUS_DATE = {{ focus_date.strftime('%Y-%m-%d')|tojson|safe }};
+const CALENDAR_URL_TEMPLATE = {{ calendar_url_template|tojson|safe }};
 Vue.config.delimiters = ['[[', ']]']
 new Vue({
     el: '#app',
@@ -101,6 +70,7 @@ new Vue({
       focus: FOCUS_DATE,
       weekdays: SETTINGS.weekdays,
       firstDayOfWeek: SETTINGS.firstDayOfWeek,
+      calendarUrlTemplate: CALENDAR_URL_TEMPLATE,
       events: [],
       title: '',
       dateRange: [],
@@ -149,7 +119,7 @@ new Vue({
           } else if(the_date.getDay() == 6) {
               the_date.setDate(the_date.getDate() - 1)
           }
-          this.focus = the_date.toISOString().split('T')[0]
+          location.href = this.calendarUrlTemplate.replace(SETTINGS.urlReplacement, the_date.toISOString().split('T')[0])
       },
     },
     mounted () {

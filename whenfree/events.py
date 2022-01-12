@@ -5,12 +5,7 @@ from typing import List, Tuple, Union
 import pytz
 from caldav import DAVClient
 
-from whenfree.settings import (
-    CALDAV_PASSWORD,
-    CALDAV_URL,
-    CALDAV_USERNAME,
-    TIMEZONE,
-)
+from whenfree.settings import CALDAV_PASSWORD, CALDAV_URL, CALDAV_USERNAME, TIMEZONE
 
 timezone = pytz.timezone(TIMEZONE)
 
@@ -175,13 +170,13 @@ def get_events(
 
     return list(merge_events(events))
 
+
 def merge_events(events: List[Event]):
     """Merge events that cover the same time period"""
     START = 0
     END = 1
     all_times = sorted(
-        [(e.start_time, START) for e in events] + 
-        [(e.end_time, END) for e in events],
+        [(e.start_time, START) for e in events] + [(e.end_time, END) for e in events],
         key=lambda x: x[0],
     )
     waiting_for_end_time = 0
@@ -194,7 +189,7 @@ def merge_events(events: List[Event]):
             waiting_for_end_time += 1
         else:
             waiting_for_end_time -= 1
-        
+
         if time_type == END and waiting_for_end_time == 0:
             yield {
                 "start": last_start_time.strftime("%Y-%m-%d %H:%M"),

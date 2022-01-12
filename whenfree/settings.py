@@ -19,6 +19,7 @@ CALENDAR_SETTINGS = {
     "ignoreSameTimeEvents": True,
     "daysBefore": 14,
     "daysAfter": 10,
+    "urlReplacement": "--DATE--",
 }
 
 TIMEZONE = os.environ.get("TIMEZONE", "Europe/London")
