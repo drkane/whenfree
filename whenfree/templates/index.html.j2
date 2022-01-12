@@ -54,8 +54,13 @@
 
 {% block bodyscripts %}
 {{ super() }}
+{% if config["ENV"] == 'production' %}
+<script src="https://cdn.jsdelivr.net/npm/vue@2.x/dist/vue.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/vuetify@2.x/dist/vuetify.min.js"></script>
+{% else %}
 <script src="https://cdn.jsdelivr.net/npm/vue@2.x/dist/vue.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/vuetify@2.x/dist/vuetify.js"></script>
+{% endif %}
 <script>
 const EVENTS = {{ events|tojson|safe }};
 const EVENT_ENDPOINT = {{ url_for('events_view', _external=true)|tojson|safe }};
@@ -105,9 +110,4 @@ new Vue({
     },
 })
 </script>
-{% endblock %}
-
-{% block headscripts %}
-<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.6.0/chart.min.js" integrity="sha512-GMGzUEevhWh8Tc/njS0bDpwgxdCJLQBWG3Z2Ct+JGOpVnEmjvNx6ts4v6A2XJf1HOrtOsfhv3hBKpK9kE5z8AQ==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
-{{ super() }}
 {% endblock %}
