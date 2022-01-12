@@ -57,6 +57,7 @@
 <script src="https://cdn.jsdelivr.net/npm/vue@2.x/dist/vue.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/vuetify@2.x/dist/vuetify.js"></script>
 <script>
+const EVENTS = {{ events|tojson|safe }};
 const EVENT_ENDPOINT = {{ url_for('events_view', _external=true)|tojson|safe }};
 const SETTINGS = {{ calendar_settings|tojson|safe }};
 const FOCUS_DATE = {{ focus_date.strftime('%Y-%m-%d')|tojson|safe }};
@@ -71,10 +72,10 @@ new Vue({
       weekdays: SETTINGS.weekdays,
       firstDayOfWeek: SETTINGS.firstDayOfWeek,
       calendarUrlTemplate: CALENDAR_URL_TEMPLATE,
-      events: [],
+      events: EVENTS,
       title: '',
       dateRange: [],
-      loading: true,
+      loading: false,
     }),
     methods: {
       setToday () {
@@ -87,30 +88,7 @@ new Vue({
         this.$refs.calendar.next(1)
       },
       onChange (span) {
-          start_date = new Date(span.start.date)
-          end_date = new Date(span.end.date)
-          if(start_date.getFullYear() == end_date.getFullYear() && start_date.getMonth() == end_date.getMonth()) {
-              this.title = start_date.toLocaleString('en-GB', { day: 'numeric' }) + "-" + end_date.toLocaleString('en-GB', { year: 'numeric', month: 'long', day: 'numeric' })
-          } else if(start_date.getFullYear() == end_date.getFullYear()) {
-              this.title = start_date.toLocaleString('en-GB', { day: 'numeric', month: 'long' }) + " - " + end_date.toLocaleString('en-GB', { year: 'numeric', month: 'long', day: 'numeric' })
-          } else {
-              this.title = start_date.toLocaleString('en-GB', { year: 'numeric', day: 'numeric', month: 'long' }) + " - " + end_date.toLocaleString('en-GB', { year: 'numeric', month: 'long', day: 'numeric' })
-          }
-          this.dateRange = [span.start.date, span.end.date]
-        this.loading = true;
-
-        var url = new URL(EVENT_ENDPOINT)
-        url.search = new URLSearchParams({
-            start: span.start.date,
-            end: span.end.date,
-        }).toString();
-
-        fetch(url).then((response) => {
-            return response.json()
-        }).then((json) => {
-            this.events = json.events;
-            this.loading = false;
-        })
+        this.dateRange = [span.start.date, span.end.date]
       },
       selectDateRange(date) {
           the_date = new Date(date)

@@ -67,7 +67,12 @@ def create_app():
 
         return render_template(
             "index.html.j2",
-            events=[],
+            events=get_events(
+                previous_monday,
+                last_day_of_week,
+                settings.CALENDARS_TO_INCLUDE,
+                **settings.CALENDAR_SETTINGS,
+            ),
             calendar_url_template=url_for(
                 "index",
                 focus_date=settings.CALENDAR_SETTINGS["urlReplacement"],
