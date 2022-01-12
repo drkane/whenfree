@@ -1,6 +1,6 @@
 import datetime
 
-from flask import Flask, render_template, request, url_for
+from flask import Flask, abort, render_template, request, url_for
 from flask_caching import Cache
 from humanize.time import naturaldelta
 
@@ -47,6 +47,10 @@ def create_app():
                 + end_date.strftime(date_format)
             )
         return start_date.strftime(date_format) + " - " + end_date.strftime(date_format)
+
+    @app.route("/favicon.ico")
+    def favicon():
+        abort(404)
 
     @app.route("/")
     @app.route("/<focus_date>")
