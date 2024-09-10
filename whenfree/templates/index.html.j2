@@ -3,50 +3,36 @@
 {% block content %}
 <div class="w-100 db mb5">
   <a href="{{ url_for('index') }}" class="link pa2 f4 br2 pa2 bg-blue white mr2">Today</a>
-  <a href="{{ url_for('index', focus_date=focus_date|add_days(-7)) }}" class="link pa2 f4 br2 pa2 bg-blue white mr2">&lt; Previous week</a>
-  <a href="{{ url_for('index', focus_date=focus_date|add_days(7)) }}" class="link pa2 f4 br2 pa2 bg-blue white mr2">Next week &gt;</a>
+  <a href="{{ url_for('index', focus_date=focus_date|add_days(-7)) }}"
+    class="link pa2 f4 br2 pa2 bg-blue white mr2">&lt; Previous week</a>
+  <a href="{{ url_for('index', focus_date=focus_date|add_days(7)) }}" class="link pa2 f4 br2 pa2 bg-blue white mr2">Next
+    week &gt;</a>
   <span class="header-font ml3 f3">
     {{ focus_date|date_range(last_day_of_week) }}
   </span>
 </div>
 <div id="app">
-<v-app>
-  <v-row>
-    <v-col
-        cols="3"
-    >
-      <v-date-picker
-        v-model="dateRange"
-        @click:date="selectDateRange"
-        :first-day-of-week="firstDayOfWeek"
-        show-adjacent-months
-        range
-        no-title
-      ></v-date-picker>
-    </v-col>
-        <v-col
-        cols="9">
-            <v-sheet height="800">
-                <v-overlay :value="loading" :absolute="true">
-                <v-progress-circular
-                    indeterminate
-                    size="64"
-                ></v-progress-circular>
-                </v-overlay>
-                <v-calendar
-                ref="calendar"
-                v-model="focus"
-                :events="events"
-                color="primary"
-                type="week"
-                event-overlap-mode="stack"
-                :weekdays="weekdays"
-                @change="onChange"
-                ></v-calendar>
-            </v-sheet>
-        </v-col>
+  <v-app>
+    <v-row>
+      <v-col cols="12" lg="9">
+        <v-sheet height="800">
+          <v-overlay :value="loading" :absolute="true">
+            <v-progress-circular indeterminate size="64"></v-progress-circular>
+          </v-overlay>
+          <v-calendar ref="calendar" v-model="focus" :events="eventsAdjustedTimezone" color="primary" type="week"
+            event-overlap-mode="stack" :weekdays="weekdays" @change="onChange"></v-calendar>
+        </v-sheet>
+      </v-col>
+      <v-col cols="12" lg="3">
+        <v-date-picker v-model="dateRange" @click:date="selectDateRange" :first-day-of-week="firstDayOfWeek"
+          show-adjacent-months range no-title></v-date-picker>
+        <v-combobox label="Timezone" v-model="selected_timezone" :items="timezones" item-text="name"
+          item-value="value"></v-combobox>
+        <v-btn @click="selected_timezone = start_timezone" v-if="selected_timezone != start_timezone">Reset
+          timezone</v-btn>
+      </v-col>
     </v-row>
-</v-app>
+  </v-app>
 </div>
 
 <!--https://vuetifyjs.com/en/components/calendars/#type-day-->
@@ -62,13 +48,15 @@
 <script src="https://cdn.jsdelivr.net/npm/vuetify@2.x/dist/vuetify.js"></script>
 {% endif %}
 <script>
-const EVENTS = {{ events|tojson|safe }};
-const EVENT_ENDPOINT = {{ url_for('events_view', _external=true)|tojson|safe }};
-const SETTINGS = {{ calendar_settings|tojson|safe }};
-const FOCUS_DATE = {{ focus_date.strftime('%Y-%m-%d')|tojson|safe }};
-const CALENDAR_URL_TEMPLATE = {{ calendar_url_template|tojson|safe }};
-Vue.config.delimiters = ['[[', ']]']
-new Vue({
+  const EVENTS = {{ events| tojson | safe }};
+  const EVENT_ENDPOINT = {{ url_for('events_view', _external = true) | tojson | safe }};
+  const SETTINGS = {{ calendar_settings| tojson | safe }};
+  const TIMEZONE = {{ timezone| tojson | safe }};
+  const FOCUS_DATE = {{ focus_date.strftime('%Y-%m-%d') | tojson | safe }};
+  const CALENDAR_URL_TEMPLATE = {{ calendar_url_template| tojson | safe }};
+
+  Vue.config.delimiters = ['[[', ']]']
+  new Vue({
     el: '#app',
     delimiters: ['[[', ']]'],
     vuetify: new Vuetify(),
@@ -81,33 +69,107 @@ new Vue({
       title: '',
       dateRange: [],
       loading: false,
+      start_timezone: TIMEZONE,
+      selected_timezone: TIMEZONE,
+      timezones: Intl.supportedValuesOf('timeZone'),
     }),
+    computed: {
+      getDateRange() {
+        // get all the dates between start and end in dateRange
+        const start = new Date(this.dateRange[0])
+        const end = new Date(this.dateRange[1])
+        const dateRange = []
+        for (let d = start; d <= end; d.setDate(d.getDate() + 1)) {
+          dateRange.push(new Date(d))
+        }
+        return dateRange
+      },
+      eventsAdjustedTimezone() {
+        const formatter = new Intl.DateTimeFormat('en-US', {
+          timeZone: this.selected_timezone || this.start_timezone,
+          hour: 'numeric',
+          minute: 'numeric',
+          second: 'numeric',
+          day: 'numeric',
+          month: 'numeric',
+          year: 'numeric',
+          hour12: false
+        })
+
+        function formatDateTimezone(date) {
+          var parts = Object.fromEntries(
+            formatter.formatToParts(date)
+              .filter((value) => value.type != 'literal')
+              .map((value) => [value.type, parseInt(value.value).toString().padStart(2, '0')])
+          )
+          return `${parts.year}-${parts.month}-${parts.day} ${parts.hour}:${parts.minute}`
+        }
+        var updatedEvents = this.events.map(event => {
+          const start = new Date(event.start)
+          const end = new Date(event.end)
+          return {
+            ...event,
+            start: formatDateTimezone(start),
+            end: formatDateTimezone(end),
+          }
+        })
+
+        if (this.selected_timezone && (this.selected_timezone == this.start_timezone)) {
+          return updatedEvents
+        }
+
+        // add dummy events for earliestTime and latestTime
+        // for each day of the week
+        this.getDateRange.forEach(date => {
+          const earliest_start = new Date(date).setHours(0, 0, 0)
+          const earliest_end = new Date(date)
+          const latest_start = new Date(date)
+          const latest_end = new Date(date).setHours(23, 59, 59)
+          earliest_end.setHours(SETTINGS.earliestTime.split(':')[0], SETTINGS.earliestTime.split(':')[1])
+          latest_start.setHours(SETTINGS.latestTime.split(':')[0], SETTINGS.latestTime.split(':')[1])
+          updatedEvents.push({
+            start: formatDateTimezone(earliest_start),
+            end: formatDateTimezone(earliest_end),
+            name: 'Not working',
+            color: 'red',
+          })
+          updatedEvents.push({
+            start: formatDateTimezone(latest_start),
+            end: formatDateTimezone(latest_end),
+            name: 'Not working',
+            color: 'red',
+          })
+        })
+
+        return updatedEvents
+      }
+    },
     methods: {
-      setToday () {
+      setToday() {
         this.focus = ''
       },
-      prev () {
+      prev() {
         this.$refs.calendar.prev(1)
       },
-      next () {
+      next() {
         this.$refs.calendar.next(1)
       },
-      onChange (span) {
+      onChange(span) {
         this.dateRange = [span.start.date, span.end.date]
       },
       selectDateRange(date) {
-          the_date = new Date(date)
-          if(the_date.getDay() == 0) {
-              the_date.setDate(the_date.getDate() - 2)
-          } else if(the_date.getDay() == 6) {
-              the_date.setDate(the_date.getDate() - 1)
-          }
-          location.href = this.calendarUrlTemplate.replace(SETTINGS.urlReplacement, the_date.toISOString().split('T')[0])
+        the_date = new Date(date)
+        if (the_date.getDay() == 0) {
+          the_date.setDate(the_date.getDate() - 2)
+        } else if (the_date.getDay() == 6) {
+          the_date.setDate(the_date.getDate() - 1)
+        }
+        location.href = this.calendarUrlTemplate.replace(SETTINGS.urlReplacement, the_date.toISOString().split('T')[0])
       },
     },
-    mounted () {
+    mounted() {
       this.$refs.calendar.scrollToTime('07:00')
     },
-})
+  })
 </script>
 {% endblock %}

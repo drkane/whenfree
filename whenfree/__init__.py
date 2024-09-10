@@ -55,7 +55,6 @@ def create_app():
     @app.route("/")
     @app.route("/<focus_date>")
     def index(focus_date=""):
-
         if focus_date:
             # parse the focus date as a date object from ISO 8601
             focus_date = datetime.datetime.strptime(focus_date, "%Y-%m-%d").date()
@@ -85,6 +84,7 @@ def create_app():
             focus_date=previous_monday,
             last_day_of_week=last_day_of_week,
             calendar_settings=settings.CALENDAR_SETTINGS,
+            timezone=settings.TIMEZONE,
             heading=settings.USERNAME,
         )
 

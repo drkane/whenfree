@@ -181,9 +181,9 @@ def merge_events(events: List[Event]):
     )
     waiting_for_end_time = 0
     last_start_time = None
-    for time, time_type in all_times:
+    for time_value, time_type in all_times:
         if time_type == START and waiting_for_end_time == 0:
-            last_start_time = time
+            last_start_time = time_value
 
         if time_type == START:
             waiting_for_end_time += 1
@@ -193,6 +193,6 @@ def merge_events(events: List[Event]):
         if time_type == END and waiting_for_end_time == 0:
             yield {
                 "start": last_start_time.strftime("%Y-%m-%d %H:%M"),
-                "end": time.strftime("%Y-%m-%d %H:%M"),
+                "end": time_value.strftime("%Y-%m-%d %H:%M"),
                 "name": "Busy",
             }
