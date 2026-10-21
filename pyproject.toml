@@ -1,0 +1,34 @@
+[project]
+name = "whenfree"
+version = "1.0.0"
+description = "Showing when I am free/busy"
+authors = [{ name = "David Kane", email = "david@dkane.net" }]
+requires-python = ">=3.14"
+dependencies = [
+    "flask",
+    "python-dotenv",
+    "requests",
+    "icalendar",
+    "caldav",
+    "num2words",
+    "humanize",
+    "lxml",
+    "Flask-Caching",
+    "gunicorn",
+    "pytz",
+    "vobject",
+]
+
+[tool.ruff]
+lint.select = ["E", "F", "I"]
+lint.ignore = ['E501']
+
+[tool.pytest.ini_options]
+addopts = '--disable-socket'
+python_files = 'tests.py test_*.py *_tests.py'
+DJANGO_SETTINGS_MODULE = "config.settings"
+
+[dependency-groups]
+dev = [
+    "ruff>=0.17.1",
+]
